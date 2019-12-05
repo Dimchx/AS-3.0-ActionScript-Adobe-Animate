@@ -1,0 +1,201 @@
+echo "# AS-3.0-ActionScript-Adobe-Animate" >> README.md
+git init
+git add README.md
+git commit -m "first commit"
+git remote add origin https://github.com/Dimchx/AS-3.0-ActionScript-Adobe-Animate.git
+git push -u origin master
+
+import flash.display.StageAlign;
+import flash.display.StageScaleMode;
+import flash.display.StageAspectRatio;
+import flash.system.Capabilities;
+import flash.text.TextField;
+import flash.text.TextFormat;
+import flash.display.MovieClip;
+import flash.events.StageOrientationEvent;
+import flash.ui.Multitouch;
+import flash.ui.MultitouchInputMode;
+import flash.events.GestureEvent;
+import flash.events.MouseEvent;
+import flash.media.Camera;
+import flash.events.TouchEvent;
+import flash.display.BitmapData;
+import flash.media.CameraRoll;
+import flash.media.Video;
+import flash.sensors.Geolocation;
+import flash.events.StatusEvent;
+import flash.net.URLRequest;
+
+var headerr:MovieClip;
+var footerr:MovieClip;
+var backgroundd:MovieClip;
+var consolee:TextField;
+var consoleFormat:TextFormat = new TextFormat;
+
+//=====================================================
+
+stage.scaleMode = StageScaleMode.NO_SCALE;
+stage.align = StageAlign.TOP_LEFT;
+
+//////////////////// START //////////////////////////
+
+var camera:Camera;
+var video:Video;
+
+var cameraBitmapData:BitmapData;
+var cameraBitmap:Bitmap;
+
+function setCamera():void {
+    camera = Camera.getCamera();
+    camera.setMode(800,600, 24); 
+    video = new Video(800, 600); 
+    cameraBitmapData = new BitmapData(800, 600, false, 0xFFFFFF);
+  cameraBitmap = new Bitmap(cameraBitmapData); 
+  video.attachCamera(camera);
+  photoContainer.addChild(cameraBitmap);
+  stage.removeEventListener(Event.ENTER_FRAME, loop);
+  stage.addEventListener(Event.ENTER_FRAME, loop);
+}
+
+function loop(e:Event):void {
+  if (video && cameraBitmapData) {
+  cameraBitmapData.draw(video, null, null, null, null, true)};
+}
+
+//-----------------------------------------------------
+
+Multitouch.inputMode = MultitouchInputMode.TOUCH_POINT;
+
+
+        ////tapping on shutter button
+
+shutter_btn.addEventListener(TouchEvent.TOUCH_BEGIN, interaction_feedback);
+
+            //dim button
+function interaction_feedback(event:TouchEvent):void {
+    shutter_btn.alpha -=0.5;
+}
+
+            //shoot & save an image 
+shutter_btn.addEventListener(TouchEvent.TOUCH_TAP, saveImage);
+
+function saveImage(event:TouchEvent):void {
+    var capture = new BitmapData(800, 600); //background.width, background.height  same?
+    capture.draw(video);
+
+    var cameraRoll = new CameraRoll();
+    cameraRoll.addBitmapData(capture);
+}
+
+        //light-back button
+shutter_btn.addEventListener(TouchEvent.TOUCH_END, interaction_feedbackEnd);
+
+function interaction_feedbackEnd(event:TouchEvent):void {
+    shutter_btn.alpha = 1;
+}
+
+//---------------------------------------------------------
+
+
+    ///// GPS
+if(Geolocation.isSupported){
+    var geoloc = new Geolocation();
+    geoloc.addEventListener(GeolocationEvent.UPDATE, onUpdate);
+}
+
+function onUpdate(e:GeolocationEvent):void {
+
+    console.appendText("latitude: " + e.latitude + "\n");
+    console.appendText("longitude: " + e.longitude + "\n");
+    console.appendText("altitude: " + e.altitude + "\n");
+    console.appendText("horizontal accuracy: " + e.horizontalAccuracy + "\n");
+    console.appendText("vertical accuracy: " + e.verticalAccuracy + "\n");
+    console.appendText("heading: " + e.heading + "\n");
+    console.appendText("speed: " + e.speed + "\n");
+    console.appendText("timestamp: " + e.timestamp + "\n");
+
+    geoloc.removeEventListener(GeolocationEvent.UPDATE, onUpdate);
+
+    var longitude = e.longitude;
+    var latitude = e.latitude;
+
+
+nav_btn.addEventListener(MouseEvent.CLICK, navClick);
+
+var navigate:URLRequest = new URLRequest( "http://maps.google.com/?q=" + String(latitude) + ", " + String(longitude) );
+
+function navClick(event:MouseEvent):void {
+    navigateToURL(navigate);
+    }   
+}
+
+///////////////////// END///////////////////////////////////////
+
+
+this.stage.addEventListener(Event.RESIZE, adjustAppLayout);
+
+function adjustAppLayout(e:Event):void {
+    header.width = stage.stageWidth;
+    header.height = stage.stageHeight*0.10;
+
+    footer.width = stage.stageWidth;
+    footer.height = stage.stageHeight*0.02;
+    footer.y = stage.stageHeight-footer.height;
+
+    background.width = stage.stageWidth;
+    background.height = stage.stageHeight-footer.height-header.height;
+    background.y = header.height;
+
+    consoleFormat.size = stage.stageHeight*0.03;
+    console.defaultTextFormat = consoleFormat;
+    console.width = stage.stageWidth;
+    console.height = background.height - 20;
+    console.y = header.height + 10;
+
+    shutter_btn.x = stage.stageWidth / 2;
+    shutter_btn.y = stage.stageHeight-footer.height-75;
+    nav_btn.x = stage.stageWidth / 2;
+    nav_btn.y = stage.stageHeight-background.height-50;
+
+    photoContainer.scaleX = 1;
+    photoContainer.scaleY = 1;
+    photoContainer.y = header.height;   
+}
+
+
+stage.autoOrients = true;
+
+stage.addEventListener(StageOrientationEvent.ORIENTATION_CHANGE, onChange);
+
+
+setCamera();
+
+
+function onChange(event:StageOrientationEvent):void {
+    console.appendText(event.afterOrientation + "\n");
+
+
+  if (event.afterOrientation==StageOrientation.DEFAULT) {
+   photoContainer.rotation=90; 
+   photoContainer.x = photoContainer.width;
+   photoContainer.y = photoContainer.height;
+  } else if (event.afterOrientation==StageOrientation.ROTATED_RIGHT) {
+   photoContainer.rotation=0;
+   photoContainer.x=0;
+   photoContainer.y=0;
+  } else if (event.afterOrientation==StageOrientation.ROTATED_LEFT) {
+   photoContainer.rotation=0;
+   photoContainer.x=0;
+   photoContainer.y=0;
+  }
+}
+
+
+//myChecks
+console.appendText("screenDPI: " + Capabilities.screenDPI + "\n");
+console.appendText("screenResolutionX: " + Capabilities.screenResolutionX + "\n");
+console.appendText("screenResolutionY: " + Capabilities.screenResolutionY + "\n");
+
+console.appendText("Camera: " + Camera.isSupported + "\n");
+console.appendText("CameraUI: " + CameraUI.isSupported + "\n");
+console.appendText("Microphone: " + Microphone.isSupported + "\n");
